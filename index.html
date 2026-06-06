@@ -1032,6 +1032,223 @@ function showResult(){
 }
 
 setMode('flash');
+
+/* ========= FIREBASE REYTING + LOGIN ========= */
+const DB_URL = 'https://schetlardarsligi-default-rtdb.asia-southeast1.firebasedatabase.app';
+let currentUser = null;
+
+// Sahifa yuklanganda login so'ra
+window.addEventListener('load', ()=>{ showAuthScreen('login'); });
+
+function userKey(name){ return name.trim().toLowerCase().replace(/[^a-z0-9а-яёa-z]/gi,'_'); }
+
+function showAuthScreen(tab){
+  if(document.getElementById('auth-overlay')) document.getElementById('auth-overlay').remove();
+  const overlay = document.createElement('div');
+  overlay.id = 'auth-overlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(10,10,18,0.98);
+    display:flex;align-items:center;justify-content:center;
+    padding:1.5rem;
+  `;
+  overlay.innerHTML = `
+    <div style="width:100%;max-width:360px;background:#16162a;
+      border:1px solid rgba(167,139,250,0.3);border-radius:20px;padding:2rem;text-align:center;">
+      <div style="font-size:40px;margin-bottom:10px;">📚</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;
+        background:linear-gradient(135deg,#a78bfa,#60a5fa,#34d399);
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+        background-clip:text;margin-bottom:1.25rem;">Schetlar Darsligi</div>
+
+      <!-- TAB SWITCHER -->
+      <div style="display:flex;gap:6px;margin-bottom:1.25rem;background:#0a0a12;
+        border-radius:12px;padding:4px;">
+        <button id="tab-login" onclick="showAuthScreen('login')"
+          style="flex:1;padding:9px;border-radius:9px;font-size:14px;font-weight:700;
+          border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all 0.2s;
+          background:${tab==='login'?'linear-gradient(135deg,#7c3aed,#2563eb)':'transparent'};
+          color:${tab==='login'?'white':'#6666aa'};">
+          Kirish
+        </button>
+        <button id="tab-register" onclick="showAuthScreen('register')"
+          style="flex:1;padding:9px;border-radius:9px;font-size:14px;font-weight:700;
+          border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:all 0.2s;
+          background:${tab==='register'?'linear-gradient(135deg,#7c3aed,#2563eb)':'transparent'};
+          color:${tab==='register'?'white':'#6666aa'};">
+          Ro'yxat
+        </button>
+      </div>
+
+      <input id="auth-name" type="text" placeholder="Ismingiz (masalan: Yahyo)"
+        style="width:100%;padding:13px 16px;border-radius:11px;font-size:16px;
+        border:1.5px solid rgba(167,139,250,0.3);background:#0a0a12;color:#f0f0f8;
+        outline:none;font-family:'Space Grotesk',sans-serif;margin-bottom:10px;"
+        maxlength="20" autocomplete="off"/>
+      <input id="auth-pass" type="password" placeholder="Parol"
+        style="width:100%;padding:13px 16px;border-radius:11px;font-size:16px;
+        border:1.5px solid rgba(167,139,250,0.3);background:#0a0a12;color:#f0f0f8;
+        outline:none;font-family:'Space Grotesk',sans-serif;margin-bottom:6px;"
+        maxlength="30" autocomplete="off"/>
+      <div id="auth-msg" style="font-size:13px;min-height:20px;margin-bottom:10px;color:#f87171;"></div>
+      <button onclick="doAuth('${tab}')"
+        style="width:100%;padding:13px;border-radius:11px;font-size:16px;font-weight:700;
+        border:none;cursor:pointer;background:linear-gradient(135deg,#7c3aed,#2563eb);
+        color:white;font-family:'Space Grotesk',sans-serif;">
+        ${tab==='login'?'Kirish →':'Ro\'yxatdan o\'tish →'}
+      </button>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  setTimeout(()=>document.getElementById('auth-name').focus(),100);
+  ['auth-name','auth-pass'].forEach(id=>{
+    document.getElementById(id).addEventListener('keydown',e=>{ if(e.key==='Enter') doAuth(tab); });
+  });
+}
+
+async function doAuth(tab){
+  const name = document.getElementById('auth-name').value.trim();
+  const pass = document.getElementById('auth-pass').value.trim();
+  const msg  = document.getElementById('auth-msg');
+  if(name.length<2){ msg.textContent='Ism kamida 2 harf bo\'lsin!'; return; }
+  if(pass.length<3){ msg.textContent='Parol kamida 3 belgi bo\'lsin!'; return; }
+  msg.style.color='#a78bfa'; msg.textContent='⏳ Tekshirilmoqda...';
+  const key = userKey(name);
+  try {
+    const res  = await fetch(`${DB_URL}/users/${key}.json`);
+    const user = await res.json();
+    if(tab==='register'){
+      if(user && user.pass){ msg.style.color='#f87171'; msg.textContent='Bu ism band! Boshqa ism tanlang.'; return; }
+      // Yangi foydalanuvchi yarat
+      await fetch(`${DB_URL}/users/${key}.json`,{
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ name, pass, createdAt:Date.now() })
+      });
+      msg.style.color='#34d399'; msg.textContent='✅ Muvaffaqiyatli ro\'yxatdan o\'tdingiz!';
+      setTimeout(()=>loginSuccess(name),800);
+    } else {
+      if(!user){ msg.style.color='#f87171'; msg.textContent='Bunday foydalanuvchi topilmadi!'; return; }
+      if(user.pass!==pass){ msg.style.color='#f87171'; msg.textContent='Parol noto\'g\'ri!'; return; }
+      msg.style.color='#34d399'; msg.textContent='✅ Xush kelibsiz, '+user.name+'!';
+      setTimeout(()=>loginSuccess(user.name),600);
+    }
+  } catch(e){ msg.style.color='#f87171'; msg.textContent='Internet xatosi, qayta urining.'; }
+}
+
+function loginSuccess(name){
+  currentUser = name;
+  document.getElementById('auth-overlay').remove();
+  // Username pill qo'sh
+  const bar = document.querySelector('.score-bar');
+  if(bar && !document.getElementById('user-pill')){
+    const pill = document.createElement('span');
+    pill.id='user-pill'; pill.className='pill';
+    pill.style.cssText='background:rgba(167,139,250,0.15);border-color:rgba(167,139,250,0.4);color:#a78bfa;cursor:pointer;';
+    pill.title='Chiqish';
+    pill.textContent='👤 '+name;
+    pill.onclick=()=>{ currentUser=null; showAuthScreen('login'); };
+    bar.appendChild(pill);
+  }
+}
+
+// Test tugaganda — flashcard EMAS, qolgan hammasi saqlaydi
+const _origShowResult = showResult;
+showResult = function(){
+  _origShowResult();
+  if(currentUser && right>0 && mode!=='flash'){
+    saveScore(currentUser, mode, right, deck.length);
+  }
+};
+const _origShowProvResult = showProvResult;
+showProvResult = function(){
+  _origShowProvResult();
+  if(currentUser && provRight>0){
+    saveScore(currentUser, 'provodka', provRight, provDeckArr.length);
+  }
+};
+
+async function saveScore(name, mod, r, total){
+  const pct = Math.round(r/total*100);
+  const key = userKey(name);
+  try {
+    const res  = await fetch(`${DB_URL}/reyting/${key}/best.json`);
+    const best = await res.json();
+    await fetch(`${DB_URL}/reyting/${key}.json`,{
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ name, lastPct:pct, lastMode:mod, lastTime:Date.now() })
+    });
+    if(!best || pct>best){
+      await fetch(`${DB_URL}/reyting/${key}/best.json`,{
+        method:'PUT', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(pct)
+      });
+    }
+  } catch(e){ console.log('Firebase xato:',e); }
+}
+
+async function loadReyting(){
+  try {
+    const res   = await fetch(`${DB_URL}/reyting.json`);
+    const data2 = await res.json();
+    if(!data2) return [];
+    return Object.values(data2).filter(x=>x&&x.name).sort((a,b)=>(b.best||0)-(a.best||0));
+  } catch(e){ return []; }
+}
+
+(function addReytingTab(){
+  const nav = document.querySelector('.nav-tabs');
+  if(!nav||document.getElementById('reyting-tab')) return;
+  const btn = document.createElement('button');
+  btn.id='reyting-tab'; btn.className='tab'; btn.textContent='🏆 Reyting';
+  btn.onclick=()=>showReytingPage();
+  nav.appendChild(btn);
+})();
+
+async function showReytingPage(){
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('reyting-tab').classList.add('active');
+  document.getElementById('main').innerHTML=`
+    <div style="text-align:center;padding:2rem 0;color:#a78bfa;">⏳ Reyting yuklanmoqda...</div>`;
+  document.getElementById('prog').style.width='100%';
+  const list   = await loadReyting();
+  const medals = ['🥇','🥈','🥉'];
+  const rows = list.length===0
+    ? `<div style="text-align:center;color:#6666aa;padding:2rem;">Hali hech kim test topshirmagan</div>`
+    : list.map((u,i)=>`
+      <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;
+        border-radius:12px;margin-bottom:8px;
+        background:${u.name===currentUser?'rgba(167,139,250,0.15)':'#16162a'};
+        border:1px solid ${u.name===currentUser?'rgba(167,139,250,0.4)':'rgba(255,255,255,0.08)'};">
+        <div style="font-size:22px;min-width:32px;text-align:center;">${medals[i]||'#'+(i+1)}</div>
+        <div style="flex:1;">
+          <div style="font-size:15px;font-weight:600;color:#f0f0f8;">
+            ${u.name}${u.name===currentUser?' 👈':''}
+          </div>
+          <div style="font-size:12px;color:#6666aa;">Eng yaxshi natija</div>
+        </div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;
+          color:${(u.best||0)>=80?'#34d399':(u.best||0)>=60?'#fbbf24':'#f87171'};">
+          ${u.best||0}%
+        </div>
+      </div>`).join('');
+  document.getElementById('main').innerHTML=`
+    <div style="background:linear-gradient(135deg,rgba(124,58,237,0.2),rgba(6,182,212,0.15));
+      border:1px solid rgba(124,58,237,0.3);border-radius:16px;padding:1.5rem;
+      text-align:center;margin-bottom:1.25rem;">
+      <div style="font-size:32px;margin-bottom:6px;">🏆</div>
+      <div style="font-family:'Syne',sans-serif;font-size:22px;font-weight:800;
+        background:linear-gradient(135deg,#a78bfa,#60a5fa,#34d399);
+        -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">
+        Guruh Reytingi</div>
+      <div style="color:#9999bb;font-size:13px;margin-top:4px;">${list.length} ta ishtirokchi</div>
+    </div>
+    ${rows}
+    <button onclick="showReytingPage()" style="width:100%;padding:12px;border-radius:12px;
+      font-size:14px;font-weight:600;border:1px solid rgba(255,255,255,0.1);
+      background:#16162a;color:#9999bb;cursor:pointer;margin-top:8px;
+      font-family:'Space Grotesk',sans-serif;">🔄 Yangilash</button>
+  `;
+}
 </script>
 </body>
 </html>
