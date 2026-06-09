@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Panel — Schetlar Darsligi</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Space Grotesk',sans-serif;background:#0a0a12;color:#f0f0f8;min-height:100vh;}
+.bg-mesh{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 50% at 20% 20%,rgba(124,58,237,0.18) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 60% at 80% 80%,rgba(6,182,212,0.12) 0%,transparent 60%);}
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+h1{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;margin-bottom:4px;
+  background:linear-gradient(135deg,#a78bfa,#60a5fa,#34d399);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sub{color:#6666aa;font-size:13px;margin-bottom:1.5rem;}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:1.5rem;}
+.stat{background:#16162a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:14px;text-align:center;}
+.stat-n{font-size:26px;font-weight:700;color:#a78bfa;}
+.stat-n.green{color:#10b981;}
+.stat-n.yellow{color:#fbbf24;}
+.stat-l{font-size:11px;color:#6666aa;margin-top:2px;}
+
+.section-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;
+  color:#6666aa;margin:1.5rem 0 0.75rem;}
+
+.card{background:#16162a;border:1px solid rgba(255,255,255,0.08);border-radius:14px;
+  padding:14px 16px;margin-bottom:8px;transition:border-color 0.2s;}
+.card.blocked{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.05);}
+.card-top{display:flex;align-items:center;gap:10px;}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.dot-on{background:#10b981;box-shadow:0 0 6px #10b981;}
+.dot-off{background:#444466;}
+.uname{font-size:15px;font-weight:600;flex:1;}
+.device{font-size:12px;color:#6666aa;}
+.info{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap;}
+.info-item{font-size:12px;color:#9999bb;}
+.info-item span{color:#f0f0f8;font-weight:600;}
+.card-actions{display:flex;gap:6px;margin-top:10px;}
+.btn-sm{padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;
+  border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;transition:opacity 0.2s;}
+.btn-sm:hover{opacity:0.8;}
+.btn-block{background:rgba(239,68,68,0.2);color:#f87171;border:1px solid rgba(239,68,68,0.3);}
+.btn-unblock{background:rgba(16,185,129,0.2);color:#34d399;border:1px solid rgba(16,185,129,0.3);}
+.btn-del{background:rgba(100,100,120,0.2);color:#9999bb;border:1px solid rgba(100,100,120,0.3);}
+.btn-rename{background:rgba(167,139,250,0.2);color:#a78bfa;border:1px solid rgba(167,139,250,0.3);}
+
+.refresh{width:100%;padding:12px;border-radius:11px;font-size:14px;font-weight:700;
+  border:none;cursor:pointer;background:linear-gradient(135deg,#7c3aed,#2563eb);
+  color:white;font-family:'Space Grotesk',sans-serif;margin-bottom:1rem;}
+
+/* TOP LIST */
+.top-item{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  background:#16162a;border:1px solid rgba(255,255,255,0.08);border-radius:10px;margin-bottom:6px;}
+.top-rank{font-size:20px;min-width:28px;}
+.top-name{flex:1;font-size:14px;font-weight:600;}
+.top-val{font-size:14px;font-weight:700;color:#fbbf24;}
+
+/* TELEGRAM SETTINGS */
+.tg-box{background:#16162a;border:1px solid rgba(167,139,250,0.2);border-radius:14px;padding:16px;margin-bottom:1rem;}
+.tg-title{font-size:14px;font-weight:700;color:#a78bfa;margin-bottom:10px;}
+input.tg-inp{width:100%;padding:10px 14px;border-radius:9px;font-size:14px;
+  border:1.5px solid rgba(167,139,250,0.3);background:#0a0a12;color:#f0f0f8;
+  outline:none;font-family:'Space Grotesk',sans-serif;margin-bottom:8px;}
+.btn-save{padding:9px 20px;border-radius:9px;font-size:13px;font-weight:700;
+  border:none;cursor:pointer;background:linear-gradient(135deg,#7c3aed,#2563eb);
+  color:white;font-family:'Space Grotesk',sans-serif;}
+.tg-status{font-size:12px;color:#6666aa;margin-top:6px;}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;z-index:999;background:rgba(0,0,0,0.7);
+  display:flex;align-items:center;justify-content:center;padding:1rem;}
+.modal{background:#16162a;border:1px solid rgba(167,139,250,0.3);border-radius:16px;
+  padding:1.5rem;width:100%;max-width:320px;text-align:center;}
+.modal input{width:100%;padding:12px;border-radius:9px;font-size:15px;margin:10px 0;
+  border:1.5px solid rgba(167,139,250,0.3);background:#0a0a12;color:#f0f0f8;
+  outline:none;font-family:'Space Grotesk',sans-serif;}
+.modal-btns{display:flex;gap:8px;margin-top:10px;}
+.modal-btns button{flex:1;padding:10px;border-radius:9px;font-size:14px;font-weight:700;
+  border:none;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+.btn-confirm{background:linear-gradient(135deg,#7c3aed,#2563eb);color:white;}
+.btn-cancel{background:#16162a;color:#9999bb;border:1px solid rgba(255,255,255,0.1)!important;border:none;}
+
+/* LOGIN */
+.login-box{position:fixed;inset:0;z-index:9999;background:rgba(10,10,18,0.99);
+  display:flex;align-items:center;justify-content:center;padding:1.5rem;}
+.login-inner{width:100%;max-width:300px;background:#16162a;border:1px solid rgba(167,139,250,0.3);
+  border-radius:18px;padding:2rem;text-align:center;}
+input.li{width:100%;padding:12px 14px;border-radius:10px;font-size:15px;margin-bottom:8px;
+  border:1.5px solid rgba(167,139,250,0.3);background:#0a0a12;color:#f0f0f8;
+  outline:none;font-family:'Space Grotesk',sans-serif;}
+.btn-login{width:100%;padding:12px;border-radius:10px;font-size:15px;font-weight:700;
+  border:none;cursor:pointer;background:linear-gradient(135deg,#7c3aed,#2563eb);color:white;
+  font-family:'Space Grotesk',sans-serif;}
+.err{font-size:13px;color:#f87171;min-height:18px;margin-bottom:8px;}
+
+.empty{text-align:center;color:#6666aa;padding:2rem;font-size:14px;}
+
+@media(max-width:500px){
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .info{gap:8px;}
+}
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<!-- LOGIN -->
+<div id="login-box" class="login-box">
+  <div class="login-inner">
+    <div style="font-size:36px;margin-bottom:10px;">🔐</div>
+    <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:16px;
+      background:linear-gradient(135deg,#a78bfa,#60a5fa);-webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;background-clip:text;">Admin Panel</div>
+    <input class="li" id="a-pass" type="password" placeholder="Admin paroli" autocomplete="off"/>
+    <div class="err" id="a-err"></div>
+    <button class="btn-login" onclick="checkAdmin()">Kirish</button>
+  </div>
+</div>
+
+<!-- RENAME MODAL -->
+<div id="rename-modal" class="modal-bg" style="display:none">
+  <div class="modal">
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Ismni o'zgartirish</div>
+    <div style="font-size:13px;color:#6666aa;" id="rename-sub"></div>
+    <input id="rename-inp" type="text" placeholder="Yangi ism" maxlength="20"/>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeModal()">Bekor</button>
+      <button class="btn-confirm" onclick="confirmRename()">Saqlash</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL -->
+<div class="wrap" id="panel" style="display:none">
+  <h1>🔐 Admin Panel</h1>
+  <div class="sub" id="last-update">Yuklanmoqda...</div>
+
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="cnt-total">—</div><div class="stat-l">Jami qurilma</div></div>
+    <div class="stat"><div class="stat-n green" id="cnt-online">—</div><div class="stat-l">Hozir online</div></div>
+    <div class="stat"><div class="stat-n" id="cnt-today">—</div><div class="stat-l">Bugun kirgan</div></div>
+    <div class="stat"><div class="stat-n yellow" id="cnt-min">—</div><div class="stat-l">Jami daqiqa (bugun)</div></div>
+    <div class="stat"><div class="stat-n" id="cnt-blocked" style="color:#f87171">—</div><div class="stat-l">Bloklangan</div></div>
+    <div class="stat"><div class="stat-n" style="color:#34d399" id="cnt-named">—</div><div class="stat-l">Ismi bor</div></div>
+  </div>
+
+  <button class="refresh" onclick="loadData()">🔄 Yangilash</button>
+
+  <!-- TELEGRAM SOZLAMALARI -->
+  <div class="tg-box">
+    <div class="tg-title">🤖 Telegram bildirishnoma</div>
+    <input class="tg-inp" id="tg-token" placeholder="Bot token (masalan: 123456:ABC...)" autocomplete="off"/>
+    <input class="tg-inp" id="tg-chatid" placeholder="Chat ID (masalan: 123456789)" autocomplete="off"/>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-save" onclick="saveTgSettings()">💾 Saqlash</button>
+      <button class="btn-save" style="background:rgba(16,185,129,0.3);color:#34d399;" onclick="testTg()">📤 Test xabar</button>
+    </div>
+    <div class="tg-status" id="tg-status"></div>
+  </div>
+
+  <!-- ENG KO'P VAQT -->
+  <div class="section-title">⏱ Eng ko'p vaqt o'tirganlar</div>
+  <div id="top-list"></div>
+
+  <!-- QURILMALAR -->
+  <div class="section-title">📱 Barcha qurilmalar</div>
+  <div id="list"></div>
+
+  <!-- SCHET QO'SHISH -->
+  <div class="section-title">📋 Schetlar boshqaruvi</div>
+  <div class="tg-box">
+    <div class="tg-title">➕ Yangi schet qo'shish</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+      <input class="tg-inp" id="s-code" placeholder="Raqam (masalan: 5110)" style="margin:0"/>
+      <input class="tg-inp" id="s-name" placeholder="Nomi (masalan: Bank hisob raqami)" style="margin:0"/>
+    </div>
+    <input class="tg-inp" id="s-sub" placeholder="Izoh (masalan: Bankdagi pul qoldig'i)"/>
+    <input class="tg-inp" id="s-keys" placeholder="Kalit so'zlar (vergul bilan: bank,hisob,pul)"/>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-save" onclick="addSchet()">💾 Qo'shish</button>
+      <button class="btn-save" style="background:rgba(96,165,250,0.2);color:#60a5fa;" onclick="loadSchetList()">📋 Ko'rish</button>
+    </div>
+    <div id="s-msg" class="tg-status"></div>
+  </div>
+  <div id="schet-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;"></div>
+
+  <!-- PROVODKA QO'SHISH -->
+  <div class="section-title">📒 Provodkalar boshqaruvi</div>
+  <div class="tg-box">
+    <div class="tg-title">➕ Yangi provodka qo'shish</div>
+    <input class="tg-inp" id="p-group" placeholder="Guruh nomi (masalan: Asosiy vositalar)"/>
+    <input class="tg-inp" id="p-nom" placeholder="Provodka nomi (masalan: Asosiy vosita sotib olindi)"/>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+      <input class="tg-inp" id="p-d" placeholder="Debet (masalan: 0710)" style="margin:0"/>
+      <input class="tg-inp" id="p-k" placeholder="Kredit (masalan: 6010)" style="margin:0"/>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="btn-save" onclick="addProvod()">💾 Qo'shish</button>
+      <button class="btn-save" style="background:rgba(96,165,250,0.2);color:#60a5fa;" onclick="loadProvList()">📋 Ko'rish</button>
+    </div>
+    <div id="p-msg" class="tg-status"></div>
+  </div>
+  <div id="prov-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:1rem;"></div>
+</div>
+
+<script>
+const DB_URL     = 'https://schetlardarsligi-default-rtdb.asia-southeast1.firebasedatabase.app';
+const ADMIN_PASS = '2211';
+let allItems = [], renameDevId = '';
+
+document.getElementById('a-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') checkAdmin(); });
+
+function checkAdmin(){
+  if(document.getElementById('a-pass').value === ADMIN_PASS){
+    document.getElementById('login-box').style.display='none';
+    document.getElementById('panel').style.display='block';
+    loadTgSettings();
+    loadData();
+    setInterval(loadData, 30000);
+  } else {
+    document.getElementById('a-err').textContent="Parol noto'g'ri!";
+    document.getElementById('a-pass').value='';
+  }
+}
+
+function fmt(ts){
+  if(!ts) return '—';
+  const diff=Math.round((Date.now()-ts)/60000);
+  if(diff<1) return 'hozir';
+  if(diff<60) return diff+' daq oldin';
+  if(diff<1440) return Math.round(diff/60)+' soat oldin';
+  return new Date(ts).toLocaleDateString('uz-UZ');
+}
+
+function isOnline(u){ return u.online && (Date.now()-u.lastSeen)<60000; }
+
+async function loadData(){
+  try {
+    const res  = await fetch(`${DB_URL}/online.json`);
+    const data = await res.json();
+    document.getElementById('last-update').textContent='Oxirgi yangilanish: '+new Date().toLocaleTimeString('uz-UZ');
+    if(!data){
+      ['cnt-total','cnt-online','cnt-today','cnt-min','cnt-blocked','cnt-named'].forEach(id=>document.getElementById(id).textContent='0');
+      document.getElementById('list').innerHTML='<div class="empty">Hali hech kim kirmagan</div>';
+      document.getElementById('top-list').innerHTML='';
+      return;
+    }
+    allItems = Object.entries(data).filter(([k,v])=>v&&v.lastSeen).map(([k,v])=>({...v, _id:k}));
+    allItems.sort((a,b)=>b.lastSeen-a.lastSeen);
+    const todayStart = new Date(); todayStart.setHours(0,0,0,0);
+    const onlineList  = allItems.filter(isOnline);
+    const todayList   = allItems.filter(u=>u.lastSeen>=todayStart.getTime());
+    const totalMin    = todayList.reduce((s,u)=>s+(u.sessionMin||0),0);
+    const blockedList = allItems.filter(u=>u.blocked);
+    const namedList   = allItems.filter(u=>u.name&&u.name!=='—');
+    document.getElementById('cnt-total').textContent   = allItems.length;
+    document.getElementById('cnt-online').textContent  = onlineList.length;
+    document.getElementById('cnt-today').textContent   = todayList.length;
+    document.getElementById('cnt-min').textContent     = totalMin;
+    document.getElementById('cnt-blocked').textContent = blockedList.length;
+    document.getElementById('cnt-named').textContent   = namedList.length;
+
+    // Top 5 eng ko'p vaqt
+    const top5 = [...allItems].sort((a,b)=>(b.sessionMin||0)-(a.sessionMin||0)).slice(0,5);
+    const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+    document.getElementById('top-list').innerHTML = top5.length===0
+      ? '<div class="empty">Ma\'lumot yo\'q</div>'
+      : top5.map((u,i)=>`
+        <div class="top-item">
+          <div class="top-rank">${medals[i]}</div>
+          <div class="top-name">${u.name&&u.name!=='—'?u.name:"Noma'lum"} <span style="font-size:11px;color:#6666aa;">(${u.device||'?'})</span></div>
+          <div class="top-val">${u.sessionMin||0} daq</div>
+        </div>`).join('');
+
+    // Barcha qurilmalar
+    document.getElementById('list').innerHTML = allItems.map(u=>`
+      <div class="card${u.blocked?' blocked':''}" id="card-${u._id}">
+        <div class="card-top">
+          <div class="dot ${isOnline(u)?'dot-on':'dot-off'}"></div>
+          <div class="uname">${u.name&&u.name!=='—'?u.name:"Noma'lum"}${u.blocked?' 🚫':''}</div>
+          <div class="device">📱 ${u.device||'Qurilma'}</div>
+        </div>
+        <div class="info">
+          <div class="info-item">Holat: <span>${isOnline(u)?'🟢 Online':'⚫ Offline'}</span></div>
+          <div class="info-item">Oxirgi: <span>${fmt(u.lastSeen)}</span></div>
+          <div class="info-item">Sessiya: <span>${u.sessionMin||0} daq</span></div>
+          <div class="info-item">Kirgan: <span>${u.sessionStart?new Date(u.sessionStart).toLocaleString('uz-UZ'):'—'}</span></div>
+          <div class="info-item">📍 <span>${u.city||'—'}${u.region&&u.region!==u.city?', '+u.region:''}, ${u.country||'—'}</span></div>
+          <div class="info-item">🌐 <span>${u.connType||'—'}</span></div>
+          <div class="info-item">🏢 <span>${u.isp||'—'}</span></div>
+          <div class="info-item">🔌 IP: <span style="font-family:'JetBrains Mono',monospace;font-size:11px;">${u.ip||'—'}</span></div>
+        </div>
+        <div class="card-actions">
+          <button class="btn-sm btn-rename" onclick="openRename('${u._id}','${(u.name||'').replace(/'/g,"\\'")}')">✏️ Ism</button>
+          ${u.blocked
+            ? `<button class="btn-sm btn-unblock" onclick="toggleBlock('${u._id}',false)">✅ Blokdan chiqar</button>`
+            : `<button class="btn-sm btn-block" onclick="toggleBlock('${u._id}',true)">🚫 Bloklash</button>`}
+          <button class="btn-sm btn-del" onclick="deleteDevice('${u._id}')">🗑 O'chirish</button>
+        </div>
+      </div>`).join('');
+  } catch(e){
+    document.getElementById('list').innerHTML='<div class="empty">Xatolik: '+e.message+'</div>';
+  }
+}
+
+// Ismni o'zgartirish
+function openRename(id, currentName){
+  renameDevId = id;
+  document.getElementById('rename-sub').textContent = 'Joriy ism: '+(currentName||"Noma'lum");
+  document.getElementById('rename-inp').value = currentName||'';
+  document.getElementById('rename-modal').style.display='flex';
+  setTimeout(()=>document.getElementById('rename-inp').focus(),100);
+}
+function closeModal(){ document.getElementById('rename-modal').style.display='none'; renameDevId=''; }
+async function confirmRename(){
+  const newName = document.getElementById('rename-inp').value.trim();
+  if(!newName||!renameDevId) return;
+  await fetch(`${DB_URL}/online/${renameDevId}/name.json`,{
+    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(newName)
+  });
+  closeModal(); loadData();
+}
+document.getElementById('rename-inp').addEventListener('keydown',e=>{ if(e.key==='Enter') confirmRename(); });
+
+// Bloklash
+async function toggleBlock(id, block){
+  if(block && !confirm("Bu qurilmani bloklashni tasdiqlaysizmi?")) return;
+  await fetch(`${DB_URL}/online/${id}/blocked.json`,{
+    method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(block)
+  });
+  loadData();
+}
+
+// O'chirish
+async function deleteDevice(id){
+  if(!confirm("Bu qurilmani ro'yxatdan o'chirishni tasdiqlaysizmi?")) return;
+  await fetch(`${DB_URL}/online/${id}.json`,{ method:'DELETE' });
+  loadData();
+}
+
+// Telegram sozlamalari
+function loadTgSettings(){
+  const token  = localStorage.getItem('tg_token')||'';
+  const chatId = localStorage.getItem('tg_chatid')||'';
+  document.getElementById('tg-token').value  = token;
+  document.getElementById('tg-chatid').value = chatId;
+}
+function saveTgSettings(){
+  localStorage.setItem('tg_token',  document.getElementById('tg-token').value.trim());
+  localStorage.setItem('tg_chatid', document.getElementById('tg-chatid').value.trim());
+  document.getElementById('tg-status').textContent='✅ Saqlandi!';
+  setTimeout(()=>document.getElementById('tg-status').textContent='',2000);
+}
+async function sendTg(text){
+  const token  = localStorage.getItem('tg_token');
+  const chatId = localStorage.getItem('tg_chatid');
+  if(!token||!chatId) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id:chatId, text, parse_mode:'HTML' })
+    });
+  } catch(e){}
+}
+async function testTg(){
+  const token  = document.getElementById('tg-token').value.trim();
+  const chatId = document.getElementById('tg-chatid').value.trim();
+  if(!token||!chatId){ document.getElementById('tg-status').textContent='⚠️ Token va Chat ID kiriting!'; return; }
+  localStorage.setItem('tg_token', token);
+  localStorage.setItem('tg_chatid', chatId);
+  document.getElementById('tg-status').textContent='⏳ Yuborilmoqda...';
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`,{
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ chat_id:chatId, text:'✅ Admin panel ulandi! Schetlar Darsligi bot ishlayapti.' })
+    });
+    const d = await res.json();
+    if(d.ok) document.getElementById('tg-status').textContent='✅ Xabar yuborildi!';
+    else document.getElementById('tg-status').textContent='❌ Xato: '+d.description;
+  } catch(e){ document.getElementById('tg-status').textContent='❌ Ulanish xatosi'; }
+}
+
+/* ========= SCHET BOSHQARUVI ========= */
+async function addSchet(){
+  const code = document.getElementById('s-code').value.trim();
+  const name = document.getElementById('s-name').value.trim();
+  const sub  = document.getElementById('s-sub').value.trim();
+  const keys = document.getElementById('s-keys').value.trim();
+  const msg  = document.getElementById('s-msg');
+  if(!code||!name){ msg.style.color='#f87171'; msg.textContent='Raqam va nom majburiy!'; return; }
+  msg.style.color='#a78bfa'; msg.textContent='⏳ Saqlanmoqda...';
+  const key = 's_'+code+'_'+Date.now();
+  try {
+    await fetch(`${DB_URL}/schetlar/${key}.json`,{
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ code, name, sub, keys })
+    });
+    msg.style.color='#34d399'; msg.textContent='✅ Schet qo\'shildi! Sayt yangilanadi.';
+    document.getElementById('s-code').value='';
+    document.getElementById('s-name').value='';
+    document.getElementById('s-sub').value='';
+    document.getElementById('s-keys').value='';
+    loadSchetList();
+  } catch(e){ msg.style.color='#f87171'; msg.textContent='❌ Xatolik: '+e.message; }
+}
+
+async function loadSchetList(){
+  const cont = document.getElementById('schet-list');
+  cont.innerHTML='<div style="color:#6666aa;font-size:13px;padding:8px;">Yuklanmoqda...</div>';
+  try {
+    const res = await fetch(`${DB_URL}/schetlar.json`);
+    const d   = await res.json();
+    if(!d){ cont.innerHTML='<div style="color:#6666aa;font-size:13px;padding:8px;">Hali qo\'shilgan schet yo\'q</div>'; return; }
+    const items = Object.entries(d).filter(([k,v])=>v&&v.code);
+    cont.innerHTML = items.map(([k,v])=>`
+      <div style="background:#16162a;border:1px solid rgba(167,139,250,0.2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:600;color:#a78bfa;min-width:48px;">${v.code}</span>
+        <span style="flex:1;font-size:14px;">${v.name}</span>
+        <button onclick="deleteItem('schetlar','${k}','s-msg')" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:rgba(239,68,68,0.2);color:#f87171;">🗑</button>
+      </div>`).join('');
+  } catch(e){ cont.innerHTML='<div style="color:#f87171;font-size:13px;">Xatolik</div>'; }
+}
+
+/* ========= PROVODKA BOSHQARUVI ========= */
+async function addProvod(){
+  const group = document.getElementById('p-group').value.trim();
+  const nom   = document.getElementById('p-nom').value.trim();
+  const d     = document.getElementById('p-d').value.trim();
+  const k     = document.getElementById('p-k').value.trim();
+  const msg   = document.getElementById('p-msg');
+  if(!group||!nom||!d||!k){ msg.style.color='#f87171'; msg.textContent='Barcha maydonlar to\'ldirilsin!'; return; }
+  msg.style.color='#a78bfa'; msg.textContent='⏳ Saqlanmoqda...';
+  const key = 'p_'+d+'_'+k+'_'+Date.now();
+  try {
+    await fetch(`${DB_URL}/provodkalar/${key}.json`,{
+      method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ group, nom, d, k })
+    });
+    msg.style.color='#34d399'; msg.textContent='✅ Provodka qo\'shildi! Sayt yangilanadi.';
+    document.getElementById('p-group').value='';
+    document.getElementById('p-nom').value='';
+    document.getElementById('p-d').value='';
+    document.getElementById('p-k').value='';
+    loadProvList();
+  } catch(e){ msg.style.color='#f87171'; msg.textContent='❌ Xatolik: '+e.message; }
+}
+
+async function loadProvList(){
+  const cont = document.getElementById('prov-list');
+  cont.innerHTML='<div style="color:#6666aa;font-size:13px;padding:8px;">Yuklanmoqda...</div>';
+  try {
+    const res = await fetch(`${DB_URL}/provodkalar.json`);
+    const d   = await res.json();
+    if(!d){ cont.innerHTML='<div style="color:#6666aa;font-size:13px;padding:8px;">Hali qo\'shilgan provodka yo\'q</div>'; return; }
+    const items = Object.entries(d).filter(([k,v])=>v&&v.nom);
+    cont.innerHTML = items.map(([k,v])=>`
+      <div style="background:#16162a;border:1px solid rgba(245,158,11,0.2);border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:#fbbf24;font-weight:700;min-width:100%;">${v.group}</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;">
+          <span style="color:#a78bfa">D${v.d}</span>/<span style="color:#f87171">K${v.k}</span>
+        </span>
+        <span style="flex:1;font-size:13px;color:#9999bb;">${v.nom}</span>
+        <button onclick="deleteItem('provodkalar','${k}','p-msg')" style="padding:5px 10px;border-radius:7px;font-size:12px;font-weight:700;border:none;cursor:pointer;background:rgba(239,68,68,0.2);color:#f87171;">🗑</button>
+      </div>`).join('');
+  } catch(e){ cont.innerHTML='<div style="color:#f87171;font-size:13px;">Xatolik</div>'; }
+}
+
+async function deleteItem(node, key, msgId){
+  if(!confirm("O'chirishni tasdiqlaysizmi?")) return;
+  try {
+    await fetch(`${DB_URL}/${node}/${key}.json`,{ method:'DELETE' });
+    if(node==='schetlar') loadSchetList();
+    else loadProvList();
+  } catch(e){ document.getElementById(msgId).textContent='❌ O\'chirish xatosi'; }
+}
+
+// Yangi kiruvchilarni Telegram ga xabar berish
+async function checkNewEntries(){
+  const token  = localStorage.getItem('tg_token');
+  const chatId = localStorage.getItem('tg_chatid');
+  if(!token||!chatId) return;
+  const lastCheck = parseInt(localStorage.getItem('tg_last_check')||'0');
+  const now = Date.now();
+  localStorage.setItem('tg_last_check', now.toString());
+  if(!lastCheck) return;
+  const newOnes = allItems.filter(u=> u.sessionStart && u.sessionStart > lastCheck);
+  for(const u of newOnes){
+    await sendTg(
+      `🆕 <b>Yangi kirish!</b>\n👤 Ism: ${u.name&&u.name!=='—'?u.name:"Noma'lum"}\n📱 Qurilma: ${u.device||'?'}\n📍 ${u.city||'?'}, ${u.country||'?'}\n🌐 ${u.connType||'?'}\n🕐 ${new Date(u.sessionStart).toLocaleString('uz-UZ')}`
+    );
+  }
+}
+setInterval(checkNewEntries, 60000);
+</script>
+</body>
+</html>
