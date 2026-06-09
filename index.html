@@ -1163,7 +1163,6 @@ function animateCount(el, target, suffix='%'){
 setMode('flash');
 
 /* ========= LOGIN + TRACKING ========= */
-const DB_URL   = 'https://schetlardarsligi-default-rtdb.asia-southeast1.firebasedatabase.app';
 const APP_LOGIN = 'Moliya2026';
 const APP_PASS  = '2211';
 
@@ -1269,15 +1268,14 @@ function enterApp(){
 async function getLocationInfo(){
   try {
     const res  = await fetch('https://ipapi.co/json/');
-    const data = await res.json();
+    const locData = await res.json();
     return {
-      ip:      data.ip || '—',
-      city:    data.city || '—',
-      region:  data.region || '—',
-      country: data.country_name || '—',
-      org:     data.org || '—',
-      // Mobil internet yoki WiFi — org nomi orqali taxmin
-      connType: data.org && /mobile|gsm|mts|ucell|beeline|uzmobile|humans|perfectum/i.test(data.org)
+      ip:      locData.ip || '—',
+      city:    locData.city || '—',
+      region:  locData.region || '—',
+      country: locData.country_name || '—',
+      org:     locData.org || '—',
+      connType: locData.org && /mobile|gsm|mts|ucell|beeline|uzmobile|humans|perfectum/i.test(locData.org)
                 ? '📶 Mobil internet' : '📡 WiFi / Broadband'
     };
   } catch(e){
