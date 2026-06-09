@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Admin Panel — Schetlar Darsligi</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Syne:wght@700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Space Grotesk',sans-serif;background:#0a0a12;color:#f0f0f8;min-height:100vh;}
+.bg-mesh{position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 60% 50% at 20% 20%,rgba(124,58,237,0.18) 0%,transparent 60%),
+  radial-gradient(ellipse 50% 60% at 80% 80%,rgba(6,182,212,0.12) 0%,transparent 60%);}
+.wrap{position:relative;z-index:1;max-width:700px;margin:0 auto;padding:2rem 1.25rem 4rem;}
+h1{font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;margin-bottom:4px;
+  background:linear-gradient(135deg,#a78bfa,#60a5fa,#34d399);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.sub{color:#6666aa;font-size:14px;margin-bottom:1.5rem;}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:1.5rem;}
+.stat{background:#16162a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;
+  padding:14px 18px;flex:1;min-width:120px;text-align:center;}
+.stat-n{font-size:28px;font-weight:700;color:#a78bfa;}
+.stat-l{font-size:12px;color:#6666aa;margin-top:2px;}
+.card{background:#16162a;border:1px solid rgba(255,255,255,0.08);border-radius:14px;
+  padding:14px 16px;margin-bottom:8px;}
+.card-top{display:flex;align-items:center;gap:10px;}
+.dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.dot-on{background:#10b981;box-shadow:0 0 6px #10b981;}
+.dot-off{background:#6666aa;}
+.uname{font-size:16px;font-weight:600;flex:1;}
+.device{font-size:12px;color:#6666aa;}
+.info{display:flex;gap:16px;margin-top:8px;flex-wrap:wrap;}
+.info-item{font-size:12px;color:#9999bb;}
+.info-item span{color:#f0f0f8;font-weight:600;}
+.refresh{width:100%;padding:12px;border-radius:11px;font-size:14px;font-weight:700;
+  border:none;cursor:pointer;background:linear-gradient(135deg,#7c3aed,#2563eb);
+  color:white;font-family:'Space Grotesk',sans-serif;margin-bottom:1.25rem;}
+.empty{text-align:center;color:#6666aa;padding:2rem;}
+/* LOGIN */
+.login-box{position:fixed;inset:0;z-index:999;background:rgba(10,10,18,0.99);
+  display:flex;align-items:center;justify-content:center;padding:1.5rem;}
+.login-inner{width:100%;max-width:320px;background:#16162a;border:1px solid rgba(167,139,250,0.3);
+  border-radius:18px;padding:2rem;text-align:center;}
+input{width:100%;padding:12px 14px;border-radius:10px;font-size:15px;margin-bottom:8px;
+  border:1.5px solid rgba(167,139,250,0.3);background:#0a0a12;color:#f0f0f8;
+  outline:none;font-family:'Space Grotesk',sans-serif;}
+.btn{width:100%;padding:12px;border-radius:10px;font-size:15px;font-weight:700;
+  border:none;cursor:pointer;background:linear-gradient(135deg,#7c3aed,#2563eb);color:white;
+  font-family:'Space Grotesk',sans-serif;}
+.err{font-size:13px;color:#f87171;min-height:18px;margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div class="bg-mesh"></div>
+
+<div id="login-box" class="login-box">
+  <div class="login-inner">
+    <div style="font-size:36px;margin-bottom:10px;">🔐</div>
+    <div style="font-family:'Syne',sans-serif;font-size:20px;font-weight:800;margin-bottom:16px;
+      background:linear-gradient(135deg,#a78bfa,#60a5fa);-webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;background-clip:text;">Admin Panel</div>
+    <input id="a-pass" type="password" placeholder="Admin paroli" autocomplete="off"/>
+    <div class="err" id="a-err"></div>
+    <button class="btn" onclick="checkAdmin()">Kirish</button>
+  </div>
+</div>
+
+<div class="wrap" id="panel" style="display:none">
+  <h1>Admin Panel</h1>
+  <div class="sub" id="last-update">Yuklanmoqda...</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="cnt-total">—</div><div class="stat-l">Jami qurilma</div></div>
+    <div class="stat"><div class="stat-n" id="cnt-online" style="color:#10b981">—</div><div class="stat-l">Hozir online</div></div>
+    <div class="stat"><div class="stat-n" id="cnt-today">—</div><div class="stat-l">Bugun kirgan</div></div>
+  </div>
+  <button class="refresh" onclick="loadData()">🔄 Yangilash</button>
+  <div id="list"></div>
+</div>
+
+<script>
+const DB_URL = 'https://schetlardarsligi-default-rtdb.asia-southeast1.firebasedatabase.app';
+const ADMIN_PASS = '2211';
+
+document.getElementById('a-pass').addEventListener('keydown',e=>{ if(e.key==='Enter') checkAdmin(); });
+
+function checkAdmin(){
+  const val = document.getElementById('a-pass').value;
+  if(val === ADMIN_PASS){
+    document.getElementById('login-box').style.display='none';
+    document.getElementById('panel').style.display='block';
+    loadData();
+    setInterval(loadData, 30000);
+  } else {
+    document.getElementById('a-err').textContent='Parol noto\'g\'ri!';
+    document.getElementById('a-pass').value='';
+  }
+}
+
+function fmt(ts){
+  if(!ts) return '—';
+  const d=new Date(ts);
+  const now=new Date();
+  const diff=Math.round((Date.now()-ts)/60000);
+  if(diff<1) return 'hozir';
+  if(diff<60) return diff+' daq oldin';
+  if(diff<1440) return Math.round(diff/60)+' soat oldin';
+  return d.toLocaleDateString('uz-UZ');
+}
+
+function isOnline(item){
+  if(!item.online) return false;
+  return (Date.now() - item.lastSeen) < 60000;
+}
+
+async function loadData(){
+  try {
+    const res  = await fetch(`${DB_URL}/online.json`);
+    const data = await res.json();
+    document.getElementById('last-update').textContent =
+      'Oxirgi yangilanish: ' + new Date().toLocaleTimeString('uz-UZ');
+    if(!data){
+      document.getElementById('list').innerHTML='<div class="empty">Hali hech kim kirmagan</div>';
+      document.getElementById('cnt-total').textContent='0';
+      document.getElementById('cnt-online').textContent='0';
+      document.getElementById('cnt-today').textContent='0';
+      return;
+    }
+    const items = Object.values(data).filter(x=>x&&x.lastSeen);
+    items.sort((a,b)=>b.lastSeen-a.lastSeen);
+    const onlineCount = items.filter(isOnline).length;
+    const todayStart  = new Date(); todayStart.setHours(0,0,0,0);
+    const todayCount  = items.filter(x=>x.lastSeen>=todayStart.getTime()).length;
+    document.getElementById('cnt-total').textContent  = items.length;
+    document.getElementById('cnt-online').textContent = onlineCount;
+    document.getElementById('cnt-today').textContent  = todayCount;
+    document.getElementById('list').innerHTML = items.map(u=>`
+      <div class="card">
+        <div class="card-top">
+          <div class="dot ${isOnline(u)?'dot-on':'dot-off'}"></div>
+          <div class="uname">${u.name&&u.name!=='—'?u.name:'Noma\'lum'}</div>
+          <div class="device">📱 ${u.device||'Qurilma'}</div>
+        </div>
+        <div class="info">
+          <div class="info-item">Holat: <span>${isOnline(u)?'🟢 Online':'⚫ Offline'}</span></div>
+          <div class="info-item">Oxirgi: <span>${fmt(u.lastSeen)}</span></div>
+          <div class="info-item">Sessiya: <span>${u.sessionMin||0} daq</span></div>
+          <div class="info-item">Kirgan: <span>${u.sessionStart?new Date(u.sessionStart).toLocaleString('uz-UZ'):'—'}</span></div>
+        </div>
+      </div>`).join('');
+  } catch(e){
+    document.getElementById('list').innerHTML='<div class="empty">Xatolik: internet yo\'q</div>';
+  }
+}
+</script>
+</body>
+</html>
